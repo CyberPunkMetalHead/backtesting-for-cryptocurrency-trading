@@ -1,4 +1,4 @@
-** You can use this simple crypto backtesting script to ensure your trading strategy is successful **
+**You can use this simple crypto backtesting script to ensure your trading strategy is successful**
 Minimal setup required and works well with static TP and SL strategies.
 Trailing Stop Loss could imporove profitability if added.
 
