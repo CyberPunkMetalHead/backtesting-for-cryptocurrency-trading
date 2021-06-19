@@ -1,11 +1,12 @@
 from datetime import datetime
 import os
 import matplotlib
+import threading
 
 import backtrader as bt
 import backtrader.feeds as btfeeds
 
-from binancedata import get_historical_data, Client
+from binancedata import *
 
 # Overall account balance
 account_balance = 100000
@@ -24,7 +25,21 @@ buy_trigger = 1
 # Get historical data and store filename
 # No need to run this if you already have historical data
 # Simply comment out and re-assign your filename to 'ETHUSDT_1 Jan 2021.csv' for example
-filename = get_historical_data('ETHUSDT', '1 Jan 2021', Client.KLINE_INTERVAL_1MINUTE)
+
+threads = []
+coins = get_coins()
+for coin in coins:
+
+    t = threading.Thread(target=get_historical_data, args=(coin, '1 Jan 2021', Client.KLINE_INTERVAL_1MINUTE) ) #'get_historical_data('ETHUSDT', '1 Jan 2021', Client.KLINE_INTERVAL_1MINUTE)
+    t.start()
+    threads.append(t)
+
+
+[thread.join() for thread in threads]
+
+def get_all_filenames():
+    for coin in coins:
+        return [get_historical_data(coin, '1 Jan 2021', Client.KLINE_INTERVAL_1MINUTE) for coin in coins]
 
 
 # Create a Stratey
@@ -94,45 +109,49 @@ class TestStrategy(bt.Strategy):
                 self.sell(size=trade_size, exectype=bt.Order.Market)
                 self.order = self.sell()
 
+def start_backtesting():
 
-if __name__ == '__main__':
+    historical_data = get_all_filenames()
+    for coin in historical_data:
+        # Create a cerebro entity
+        cerebro = bt.Cerebro()
 
-    # Create a cerebro entity
-    cerebro = bt.Cerebro()
+        # Add a strategy
+        cerebro.addstrategy(TestStrategy)
 
-    # Add a strategy
-    cerebro.addstrategy(TestStrategy)
+        # load data from our CSV file
+        data = btfeeds.GenericCSVData(
 
-    # load data from our CSV file
-    data = btfeeds.GenericCSVData(
+        # Create a Data Feed
+        dataname=coin,
+        fromdate=datetime(2021, 1, 1),
+        todate=datetime(2021, 5, 24),
+        nullvalue=0.0,
+        dtformat=lambda x: datetime.utcfromtimestamp(float(x) / 1000.0),
+        datetime=0,
+        high=1,
+        low=2,
+        open=3,
+        close=4,
+        volume = -1,
+        openinterest=-1
+        )
 
-    # Create a Data Feed
-    dataname=filename,
-    fromdate=datetime(2021, 1, 1),
-    todate=datetime(2021, 5, 24),
-    nullvalue=0.0,
-    dtformat=lambda x: datetime.utcfromtimestamp(float(x) / 1000.0),
-    datetime=0,
-    high=1,
-    low=2,
-    open=3,
-    close=4,
-    volume = -1,
-    openinterest=-1
-    )
+        # Add the Data Feed to Cerebro
+        cerebro.adddata(data)
 
-    # Add the Data Feed to Cerebro
-    cerebro.adddata(data)
+        # Set our desired cash start
+        cerebro.broker.setcash(account_balance)
 
-    # Set our desired cash start
-    cerebro.broker.setcash(account_balance)
+        # Print out the starting conditions
+        print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
-    # Print out the starting conditions
-    print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
+        # Run over everything
+        cerebro.run()
+        cerebro.plot()
 
-    # Run over everything
-    cerebro.run()
-    cerebro.plot()
+        # Print out the final result
+        print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
 
-    # Print out the final result
-    print('Final Portfolio Value: %.2f' % cerebro.broker.getvalue())
+
+start_backtesting()

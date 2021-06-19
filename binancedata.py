@@ -8,6 +8,12 @@ from datetime import date, datetime
 
 client = Client()
 
+def get_coins():
+    with open('coins.txt', 'r') as f:
+        coins = f.readlines()
+        coins = [coin.strip('\n') for coin in coins]
+    return coins
+
 
 def get_historical_data(coin, since, kline_interval):
     """
@@ -20,7 +26,7 @@ def get_historical_data(coin, since, kline_interval):
         print('Datafile already exists, loading file...')
 
     else:
-        print(f'Fetching historical data, this may take a few minutes...')
+        print(f'Fetching historical data for {coin}, this may take a few minutes...')
 
         start_time = time.perf_counter()
         data = client.get_historical_klines(coin, kline_interval, since)
