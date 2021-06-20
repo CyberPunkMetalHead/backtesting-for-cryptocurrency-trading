@@ -104,10 +104,11 @@ class TestStrategy(bt.Strategy):
         if self.position:
             if self.dataclose[0] > self.position.price + (self.position.price*take_profit/100) or  self.dataclose[0] < self.position.price - (self.position.price*stop_loss/100):
 
-                # Already in the market ... we might sell
-                self.log('SELL CREATE, %.2f' % self.dataclose[0])
-                self.sell(size=trade_size, exectype=bt.Order.Market)
-                self.order = self.sell()
+                #self.log('SELL CREATE, %.2f' % self.dataclose[0])
+                #self.sell(size=trade_size, exectype=bt.Order.Market)
+                #self.order = self.sell() 
+                self.close()
+                self.order = self.close()
 
 def start_backtesting():
 
